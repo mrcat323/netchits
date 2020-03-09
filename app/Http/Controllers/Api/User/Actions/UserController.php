@@ -64,9 +64,6 @@ class UserController extends Controller
             ->with('followers', $followers);
 
 
-
-        // return view('test');
-
     }
 
     public function showUserProfile($id) {

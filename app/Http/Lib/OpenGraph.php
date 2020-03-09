@@ -35,7 +35,7 @@ class OpenGraph implements \Iterator
    * @return OpenGraph
    */
 
-	static public function fetch($URI) {
+	public static function fetch($URI) {
         $curl = curl_init($URI);
 
         curl_setopt($curl, CURLOPT_FAILONERROR, true);

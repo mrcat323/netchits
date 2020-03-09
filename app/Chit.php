@@ -1,18 +1,17 @@
 <?php
 
-namespace app\Models\User;
+namespace app;
 
 use Illuminate\Database\Eloquent\Model;
 use app\Http\Lib\OpenGraph;
 use app\Http\Controllers\Api\Data\DataController;
 
 
-class ChitsModel extends Model
+class Chit extends Model
 {
     protected $table = 'chits';
     protected $guarded = ['id'];
     public $timestamps = true;
-    public $result = [];
 
     public function user()
     {
@@ -24,15 +23,10 @@ class ChitsModel extends Model
         return $this->hasOne('app\Models\User\ChitsGroupModel', 'id', 'group_id');
     }
 
-    // public function userMany() {
-    //     return $this->belongsToMany('app\Models\Auth\UsersModel', 'chits_group', 'user_id', 'id');
-    // }
-
-
     public function hasChits($user) {
         $chits = $this
-            ->where('userid', $user['id'])
-            ->count();
+               ->where('userid', $user['id'])
+               ->count();
         return $chits;
     }
 
@@ -85,9 +79,9 @@ class ChitsModel extends Model
 
         }
 
-            $result['status'] = 1;
-            $result['msg'] = 'success';
-            return $result;
+        $result['status'] = 1;
+        $result['msg'] = 'success';
+        return $result;
     }
 
     public function copy($id)
@@ -104,65 +98,57 @@ class ChitsModel extends Model
         $this->save();
     }
 
-    public function addNew($user, $chitsAddress, $chitsGroupId) 
+    public function addNew($address, $groupId) 
     {
-        $graph = OpenGraph::fetch($chitsAddress);
+        $graph = OpenGraph::fetch($address);
         $opg = [];
 
-        if(is_youtube($chitsAddress) !== 'yes') {
-            foreach ($graph as $key => $value) {
-                $opg[$key] = $value;
-            }
+        if (!is_youtube($address)) {
+            dd($graph);
         } else {
 
             // FOR YOUTUBE
 
-            $videoId = getcode_youtube($chitsAddress);
+            $videoId = getcode_youtube($address);
             $tags = get_meta_tags('https://www.youtube.com/watch?v=' . $videoId);
 
             $opg["site_name"] = 'youtube';
-            $opg['title'] = $tags['title'];
-            $opg['image'] = "//img.youtube.com/vi/" . getcode_youtube($chitsAddress) . "/mqdefault.jpg";
+            $opg['title'] = @$tags['title'];
+            $opg['image'] = "//img.youtube.com/vi/" . getcode_youtube($address) . "/mqdefault.jpg";
         }
 
 
-        // insert to database
-        $this->userid = auth()->id;
-        $this->address = $address;
-        $this->group_id = $groupId;
-        $this->opg_sitename = $opg["site_name"];
-        $this->opg_title = $opg["title"];
-        $this->opg_image = $opg["image"];
-        $this->save();
+        // // insert to database
+        // $this->userid = 45;
+        // $this->address = $address;
+        // $this->group_id = $groupId;
+        // $this->opg_sitename = $opg["site_name"];
+        // $this->opg_title = $opg["title"];
+        // $this->opg_image = $opg["image"];
+        // $this->save();
+        $this->create([
+            'userid' => 45,
+            'address' => $address,
+            'group_id' => $groupId,
+            'opg_sitename' => $opg["site_name"],
+            'opg_title' => $opg["title"],
+            'opg_image' => $opg["image"]
+        ]);
+
+        return $this;
     }
 
-
-
-
-
-
-
     public function getUserChits($user) {
-        // $userChits = $this->where([
-        //     ['userid', '=', $user['id']],
-        // ])->latest()->get();
-
-
-        $userChits = $this
-            ->where('userid', $user['id'])
-            ->orderByDesc("id")
-            ->get();
-
-        return $userChits;
+        return $user->chits->latest();
     }
 
     public function getChitsByGroup($user, $id) {
 
         $chitsByGroup = $this
-            ->where('userid', $user['id'])
-            ->where('group_id', $id)
-            ->orderByDesc("id")
-            ->get();
+                      ->where('userid', $user['id'])
+                      ->where('group_id', $id)
+                      ->orderByDesc("id")
+                      ->get();
 
         return $chitsByGroup;
     }
@@ -203,25 +189,5 @@ class ChitsModel extends Model
 
         return true;
     }
-
-    public function is_userchits($user, $chitsId) {
-
-        $userChits = $this->where([
-            ['userid', '=', $user['id']],
-            ['id', '=', $chitsId]
-        ])->first();
-
-        if(is_null($userChits)) {
-            $this->result['status'] = 0;
-            $this->result['msg'] = 'post with this id and userid not found';
-            return $this->result;
-        }
-
-        $this->result['status'] = 1;
-        $this->result['msg'] = 'success';
-        return $this->result;
-
-    }
-
 
 }

@@ -204,24 +204,4 @@ class ChitsModel extends Model
         return true;
     }
 
-    public function is_userchits($user, $chitsId) {
-
-        $userChits = $this->where([
-            ['userid', '=', $user['id']],
-            ['id', '=', $chitsId]
-        ])->first();
-
-        if(is_null($userChits)) {
-            $this->result['status'] = 0;
-            $this->result['msg'] = 'post with this id and userid not found';
-            return $this->result;
-        }
-
-        $this->result['status'] = 1;
-        $this->result['msg'] = 'success';
-        return $this->result;
-
-    }
-
-
 }

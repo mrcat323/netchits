@@ -11,7 +11,7 @@ use app\Http\Controllers\Api\Data\DataController;
 
 //-------------------App Models---------------------//
 use app\Models\Auth\UsersModel;
-use app\Models\User\ChitsModel;
+use app\Chit;
 use app\Models\User\ChitsGroupModel;
 //-------------------App Models---------------------//
 
@@ -21,68 +21,33 @@ use app\Http\Lib\OpenGraph;
 class ChitsController extends Controller
 {
 
-    public function copyChits(Request $request) {
-        // SECTION : Models & Controllers
-        $usersModel = new UsersModel;
-        $chitsModel = new ChitsModel;
-        $chitsGroupModel = new ChitsGroupModel;
-        // SECTION : Request
-        $chitId = $request->chitId;
-
-        // SECTION : Logics
-        $user = $usersModel->getUser();
-
-        if(is_null($user)) {
-            $result['status'] = 2;
-            $result['msg'] = 'redirect';
-            return $result;
-        }
-
-
-        $hasChits = $chitsModel->hasChits($user);
-        if($hasChits < 1) {
-            $defaultGroup = $chitsGroupModel->addDefaultGroup($user);
-        }
-
-        $chit = $chitsModel->copy($user, $chitId);
-
-        return $chit;
+    public function copyChits(Request $request, Chit $chit)
+    {
+        $chit->copy($request->id);
+        
+        return response()->json([
+            'msg' => 'success'
+        ]);
     }
 
     public function addChits(Request $request) {
 
         // SECTION : Models & Controllers
         $usersModel = new UsersModel;
-        $chitsModel = new ChitsModel;
+        $chitsModel = new Chit;
         $chitsGroupModel = new ChitsGroupModel;
-        $dataController = new DataController;
 
         // SECTION : Request
-        $chitsAddress = $request->chitsAddress;
-        $chitsGroupId = $request->chitsGroupId;
+        $address = $request->address;
+        $groupId = $request->groupId;
 
-
-        // SECTION : Logics
-        $user = $usersModel->getUser();
-
-
-        // если пользователь не добавил группу, создаем первую группу
-        $hasChits = $chitsModel->hasChits($user);
-
-
-        if($hasChits == 0) {
-            $chitsGroupId = $chitsGroupModel->addDefaultGroup($user)->id;
-            // $setDefaultGroup = $usersModel->setDefaultGroup($chitsGroupId)->id;
-        }
-
-
-        $chit = $chitsModel->addNew($user, $chitsAddress, $chitsGroupId);
+        $chit = $chitsModel->addNew($address, $groupId);
 
         if(is_null($chit)) {
             $result['status'] = 0;
             $result['msg'] = 'error, chit not added';
         }
-
+        
         $result['status'] = 1;
         $result['msg'] = 'success';
         $result['chit']['group_id'] = $chit->group_id;
@@ -96,44 +61,16 @@ class ChitsController extends Controller
                 ->with("chit", $chit)
                 ->render();
         }
-
         return response()->json($result);
-
-
     }
 
-    public function deleteChits(Request $request) {
-            // SECTION : Models
-            $usersModel = new UsersModel;
-            $chitsModel = new ChitsModel;
-            $chitsGroupModel = new ChitsGroupModel;
-            // SECTION : Request
-            $chitsId = $request->chitsId;
-            // SECTION : Logics
-            $user = $usersModel->getUser();
-            $is_userchits = $chitsModel->is_userchits($user, $chitsId);
+    public function deleteChits(Request $request, Chit $chit)
+    {
+        $chit->find($request->id)->delete();
 
-            if($is_userchits['status'] == 0) {
-                return $is_userchits;
-            }
-
-            $deleted = $chitsModel->remove($user, $chitsId);
-
-            if(is_null($deleted)) {
-                return 'error delete chits';
-            }
-
-            $result['status'] = 1;
-            $result['msg'] = 'success';
-            $result['chit']['group_id'] = $deleted->group_id;
-            $result['chit']['id'] = $deleted->id;
-            // $result['html'] = view('user.chits.chits-list')
-            //     ->with("user", $user)
-            //     ->with("userChits", @$userChits)
-            //     ->with("userGroups", @$userGroups)
-            //     ->render();
-
-            return response()->json($result);
+        return response()->json([
+            'msg' => 'success'
+        ]);
     }
 
 }
